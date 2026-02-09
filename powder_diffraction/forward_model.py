@@ -10,7 +10,7 @@ from typing import Tuple, Optional
 from dataclasses import dataclass, field
 
 from .geometry.lattice import HexagonalLattice, DEFAULT_A, DEFAULT_D
-from .geometry.crystallite import compute_intensity, in_plane_structure_factor
+from .geometry.crystallite import compute_intensity, compute_intensity_vectorized, in_plane_structure_factor
 from .markov.transition import build_transition_matrix, stationary_distribution
 from .correlation.cdelta import CorrelationComputer
 from .powder.quadrature import spherical_quadrature, recommended_quadrature_points
@@ -101,11 +101,13 @@ class PowderDiffractionModel:
 
     def _powder_average_single_Q(self, Q_mag: float) -> float:
         """Compute powder-averaged intensity for a single Q magnitude."""
-        total = 0.0
-        for direction, weight in zip(self._directions, self._weights):
-            Q_vec = Q_mag * direction
-            total += weight * self._single_crystal_intensity(Q_vec)
-        return total
+        # Vectorized computation for all directions at once
+        Q_vecs = Q_mag * self._directions
+        intensities = compute_intensity_vectorized(
+            Q_vecs, self.N_a, self.N_b, self.N_c,
+            self._corr_computer, self._lattice
+        )
+        return np.sum(self._weights * intensities)
 
     def compute_raw_pattern(self, Q_grid: np.ndarray) -> np.ndarray:
         """
