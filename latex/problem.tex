@@ -84,13 +84,13 @@ K, & X_{n-1} \neq X_{n+1},
 \end{equation}
 
 Assume $(S_n)$ is a stationary \emph{second-order} Markov chain (reichweite $s=4$) with transition probabilities
-\begin{equation}
-\alpha=P(S_{n}=K\mid S_{n-1}S_{n-2}=HH),\;
-\beta =P(S_{n}=K\mid S_{n-1}S_{n-2}=HK),\;
-\gamma=P(S_{n}=K\mid S_{n-1}S_{n-2}=KH),\;
-\delta=P(S_{n}=K\mid S_{n-1}S_{n-2}=KK),
+\begin{align}
+\alpha &= P(S_{n}=K\mid S_{n-1}S_{n-2}=HH),\nonumber\\
+\beta  &= P(S_{n}=K\mid S_{n-1}S_{n-2}=HK),\nonumber\\
+\gamma &= P(S_{n}=K\mid S_{n-1}S_{n-2}=KH),\nonumber\\
+\delta &= P(S_{n}=K\mid S_{n-1}S_{n-2}=KK),
 \label{eq:abcd_def}
-\end{equation}
+\end{align}
 and $P(S_n=H\mid\cdot)=1-P(S_n=K\mid\cdot)$.
 
 The joint law of the ABC sequence is the one induced by \eqref{eq:HK_def} and the Markov law \eqref{eq:abcd_def}.
@@ -239,7 +239,7 @@ G_{ij}(\Delta)=\pi_i\,(\Xi^\Delta)_{ij},
 \end{equation}
 This is the same relation used by Hart--Hansen--Kuhs (stated in their Appendix~B in the context of $G_{ij}(m_3)$). \cite{hart2021acentric}
 
-Now define the correlation function (compare to our earlier definition $C_\Delta(\bm Q)=\mathbb{E}[g_{X_n}(\bm Q)^\ast g_{X_{n+\Delta}}(\bm Q)]$):
+Now define the correlation function (compare to our earlier definition in \eqref{eq:Cdef}):
 \begin{equation}
 C_\Delta(\bm Q)
 :=\mathbb{E}\big[\Phi_{Z_n}(\bm Q)^\ast\,\Phi_{Z_{n+\Delta}}(\bm Q)\big],
@@ -523,17 +523,18 @@ or supply H/D sites from a CIF-based structural model.
 
 \subsection{Citations / links (for the document)}
 \begin{itemize}
-\item Ice Ic CIF: COD 1541503 \texttt{https://www.crystallography.net/cod/1541503.cif}.
-\item Ice Ih entry example: COD 1572235 \texttt{https://www.crystallography.net/cod/1572235.html}.
-\item Ice Ih search listing (includes COD 9015208): \texttt{https://qiserver.ugr.es/cod/result.php?...}.
+\item Ice Ic CIF: COD 1541503 \url{https://www.crystallography.net/cod/1541503.cif}.
+\item Ice Ih entry example: COD 1572235 \url{https://www.crystallography.net/cod/1572235.html}.
+\item Ice Ih search listing (includes COD 9015208): \url{https://qiserver.ugr.es/cod/result.php?...}.
 \end{itemize}
 
 \bibliographystyle{plain}
 \begin{thebibliography}{1}
+\raggedright
 \bibitem{hart2021acentric}
 A.~G. Hart, T.~C. Hansen, and W.~F. Kuhs.
 \newblock Acentricity in aperiodic crystals.
-\newblock \emph{arXiv:2102.08418}, 2021.
+\newblock \emph{arXiv:2102.08418}, 2021. \url{https://arxiv.org/pdf/2102.08418}.
 \end{thebibliography}
 
 \end{document}
