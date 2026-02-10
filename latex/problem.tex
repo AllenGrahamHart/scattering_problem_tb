@@ -20,6 +20,7 @@ You are given synthetic \emph{powder} neutron diffraction data from stacking-dis
 \begin{enumerate}
 \item a finite crystallite of size $(N_a,N_b,N_c)$ in the three lattice directions,
 \item a stacking-disorder model with \emph{reichweite} $s=4$ described via ABC and HK notation and four transition parameters $(\alpha,\beta,\gamma,\delta)$,
+\item an oxygen-only scattering model (hydrogen is ignored),
 \item an instrument resolution function modeled as a global Lorentzian convolution in $Q=\|\bm Q\|$ with width parameter $\Gamma>0$,
 \item additive noise (details provided in the input).
 \end{enumerate}
@@ -30,12 +31,12 @@ Your goal is to implement a forward model and then solve the inverse problem of 
 from the observed powder pattern.
 
 \subsection*{Scattering model from first principles}
-Let $\mathcal{J}$ denote the set of all atoms in the crystallite. For a given scattering vector $\bm Q\in\mathbb{R}^3$, define the total crystal amplitude
+We model \emph{only the oxygen sublattice}. Let $\mathcal{J}$ denote the set of all oxygen atoms in the crystallite. For a given scattering vector $\bm Q\in\mathbb{R}^3$, define the total crystal amplitude
 \begin{equation}
 \psi(\bm Q) \;=\; \sum_{j\in\mathcal{J}} f_j \, e^{-i\,\bm Q\cdot \bm r_j},
 \label{eq:psi_def}
 \end{equation}
-where $\bm r_j$ is the position of atom $j$ and $f_j$ is its (coherent) neutron scattering length (provided; treat $f_j$ as $Q$-independent and ignore Debye--Waller factors).
+where $\bm r_j$ is the position of oxygen atom $j$ and $f_j=f_{\mathrm O}$ is the (coherent) neutron scattering length of oxygen (provided; treat $f_{\mathrm O}$ as $Q$-independent and ignore Debye--Waller factors). Hydrogen is ignored in this model.
 
 Under the kinematic approximation, the (un-normalized) differential cross section is
 \begin{equation}
@@ -45,25 +46,24 @@ Under the kinematic approximation, the (un-normalized) differential cross sectio
 where $\mathbb{E}[\cdot]$ is the expectation over stacking disorder (defined below). You may absorb proportionality constants into a global scale factor.
 
 \subsection*{Crystal geometry and atomic positions}
-You are given lattice vectors $\bm a,\bm b,\bm c$ and a \emph{reference layer basis} of $N_{\mathrm{layer}}$ atoms with in-layer fractional coordinates $\{\bm s_p\}_{p=1}^{N_{\mathrm{layer}}}$ (lying in the $ab$-plane) and scattering lengths $\{f_p\}_{p=1}^{N_{\mathrm{layer}}}$.
+You are given lattice vectors $\bm a,\bm b,\bm c$ and the three close-packed in-plane offsets $\bm t_A,\bm t_B,\bm t_C$ for the oxygen sublattice.
 
 A finite crystallite is formed by:
 \begin{itemize}
-\item replicating the in-layer basis on an $N_a\times N_b$ grid in the $(\bm a,\bm b)$ directions, and
+\item placing one oxygen per in-plane lattice site on an $N_a\times N_b$ grid in the $(\bm a,\bm b)$ directions, and
 \item stacking $N_c$ close-packed layers along $\bm c$ with interlayer spacing $d$ (provided).
 \end{itemize}
 
 Each close-packed layer has a label $X_n\in\{A,B,C\}$ and is placed using an in-plane offset $\bm t_{X_n}$ (provided vectors $\bm t_A,\bm t_B,\bm t_C$). The atom positions are thus
 \begin{equation}
-\bm r_{n,m_1,m_2,p}
+\bm r_{n,m_1,m_2}
 = m_1\bm a + m_2\bm b + n\,d\,\hat{\bm c}
-+ \bm t_{X_n} + \bm s_p,
++ \bm t_{X_n},
 \quad
 \begin{matrix}
 0\le n\le N_c-1\\
 0\le m_1\le N_a-1\\
 0\le m_2\le N_b-1\\
-1\le p\le N_{\mathrm{layer}}
 \end{matrix}
 \label{eq:positions}
 \end{equation}
@@ -143,7 +143,7 @@ Taking expectation over stacking disorder gives
 = \sum_{j,j'\in\mathcal{J}} f_j f_{j'}\,\mathbb{E}\!\left[e^{-i\bm Q\cdot(\bm r_j-\bm r_{j'})}\right].
 \label{eq:double_sum}
 \end{equation}
-Using the explicit indexing \eqref{eq:positions}, group atoms by \emph{layer index} $n$ and in-plane indices $(m_1,m_2)$ and basis index $p$. This yields a natural factorization:
+Using the explicit indexing \eqref{eq:positions}, group atoms by \emph{layer index} $n$ and in-plane indices $(m_1,m_2)$. This yields a natural factorization:
 \begin{itemize}
 \item deterministic in-plane lattice sums over $m_1,m_2$, producing Dirichlet-kernel-type factors in the reciprocal components parallel to $\bm a^\ast,\bm b^\ast$,
 \item a stacking-direction sum over layer indices $n$ that couples to the random offsets $\bm t_{X_n}$ (hence to the ABC process).
@@ -151,7 +151,7 @@ Using the explicit indexing \eqref{eq:positions}, group atoms by \emph{layer ind
 
 A convenient intermediate object is the \emph{single-layer amplitude} for a given layer label $X\in\{A,B,C\}$:
 \begin{equation}
-g_X(\bm Q) := \sum_{p=1}^{N_{\mathrm{layer}}} f_p \, e^{-i\bm Q\cdot(\bm s_p+\bm t_X)}.
+g_X(\bm Q) := f_{\mathrm O}\, e^{-i\bm Q\cdot\bm t_X}.
 \label{eq:gX}
 \end{equation}
 Then $\psi(\bm Q)$ can be rewritten as
@@ -181,9 +181,9 @@ S_{ab}(\bm Q)=
 \sum_{m_1=0}^{N_a-1}e^{-i\bm Q\cdot(m_1\bm a)}
 \sum_{m_2=0}^{N_b-1}e^{-i\bm Q\cdot(m_2\bm b)},
 \]
-and the \emph{stacking correlation function} is
+and the \emph{stacking correlation function} is (note the conjugation convention)
 \begin{equation}
-C_\Delta(\bm Q) := \mathbb{E}\!\left[g_{X_n}(\bm Q)\,g_{X_{n+\Delta}}(\bm Q)^\ast\right],
+C_\Delta(\bm Q) := \mathbb{E}\!\left[g_{X_n}(\bm Q)^\ast\,g_{X_{n+\Delta}}(\bm Q)\right],
 \qquad C_{-\Delta}=C_\Delta^\ast.
 \label{eq:Cdef}
 \end{equation}
@@ -220,7 +220,7 @@ In the \emph{layer} formulation used earlier in this document, $\Phi_i(\bm Q)$ c
 Define the (rank-one, Hermitian) \emph{structure matrix}
 \begin{equation}
 F(\bm Q) \in \mathbb{C}^{M\times M},\qquad
-F_{ij}(\bm Q) := \Phi_i(\bm Q)\,\Phi_j(\bm Q)^\ast.
+F_{ij}(\bm Q) := \Phi_i(\bm Q)^\ast\,\Phi_j(\bm Q).
 \label{eq:structure_matrix_def}
 \end{equation}
 By construction, $F(\bm Q)$ is Hermitian so $F(\bm Q)^{T}=F(\bm Q)^\ast$.
@@ -239,10 +239,10 @@ G_{ij}(\Delta)=\pi_i\,(\Xi^\Delta)_{ij},
 \end{equation}
 This is the same relation used by Hart--Hansen--Kuhs (stated in their Appendix~B in the context of $G_{ij}(m_3)$). \cite{hart2021acentric}
 
-Now define the correlation function (compare to our earlier definition $C_\Delta(\bm Q)=\mathbb{E}[g_{X_n}(\bm Q)g_{X_{n+\Delta}}(\bm Q)^\ast]$):
+Now define the correlation function (compare to our earlier definition $C_\Delta(\bm Q)=\mathbb{E}[g_{X_n}(\bm Q)^\ast g_{X_{n+\Delta}}(\bm Q)]$):
 \begin{equation}
 C_\Delta(\bm Q)
-:=\mathbb{E}\big[\Phi_{Z_n}(\bm Q)\,\Phi_{Z_{n+\Delta}}(\bm Q)^\ast\big],
+:=\mathbb{E}\big[\Phi_{Z_n}(\bm Q)^\ast\,\Phi_{Z_{n+\Delta}}(\bm Q)\big],
 \qquad \Delta\ge 0.
 \label{eq:Cdelta_def}
 \end{equation}
@@ -254,7 +254,7 @@ C_\Delta(\bm Q)
 \Phi_i(\bm Q)\,\Phi_j(\bm Q)^\ast
 \nonumber\\
 &= \sum_{i=1}^M\sum_{j=1}^M
-\pi_i\,(\Xi^\Delta)_{ij}\,F_{ij}(\bm Q).
+ \pi_i\,(\Xi^\Delta)_{ij}\,F_{ij}(\bm Q).
 \label{eq:Cdelta_double_sum}
 \end{align}
 This is the same algebraic object as Hart--Hansen--Kuhs' $Y_{m_3}(\bm Q)$ (their Eq.~(9)), with $\Delta$ playing the role of their separation index $m_3$. \cite{hart2021acentric}

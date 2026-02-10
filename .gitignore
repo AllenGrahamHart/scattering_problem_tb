@@ -40,3 +40,12 @@ Thumbs.db
 
 # Jupyter
 .ipynb_checkpoints/
+
+# LaTeX build artifacts
+latex/*.aux
+latex/*.log
+latex/*.out
+latex/*.pdf
+latex/*.fls
+latex/*.fdb_latexmk
+latex/*.synctex.gz
